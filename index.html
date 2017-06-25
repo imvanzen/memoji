@@ -2,8 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/devicons/1.8.0/css/devicons.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="./styles.css">
     <title></title>
 </head>
@@ -20,18 +21,20 @@
             <button id="PlayGameButton" class="play-button">Play Game</button>
 
             <h3>visit me</h3>
-            <a href="https://github.com/imvanzen" target="_blank" title="My Github" class="devicons devicons-github_badge"></a>
-            <a href="https://stackoverflow.com/kubavanzen" target="_blank" title="My Stackoverflow" class="devicons devicons-stackoverflow"></a>
-            <a href="https://twitter.com/imvanzen" target="_blank" title="My Twitter"><i class=""></i></a>
+            <a href="https://github.com/imvanzen" target="_blank" title="My Github" class="fa fa-github"></a>
+            <a href="https://stackoverflow.com/users/2156862/imvanzen" target="_blank" title="My Stackoverflow" class="fa fa-stack-overflow"></a>
+            <a href="https://twitter.com/imvanzen" target="_blank" title="My Twitter" class="fa fa-twitter"></a>
         </div>
     </section>
 
     <section id="GameApp" class="game-content">
-        <ul class="scores">
-            <li class="">Games: <span class="games__score"></span></li>
-            <li class="">Passes: <span class="passes__score"></span></li>
-            <li class="">Misses: <span class="misses__score"></span></li>
-        </ul>
+        <div class="scores-passes">Passes: <span class="passes__score"></span></div>
+        <div class="scores-misses">Misses: <span class="misses__score"></span></div>
+
+        <div class="board"></div>
+
+        <div class="scores-games">Games: <span class="games__score"></span></div>
+        <button id="CancelGameButton" class="cancel-button">Cancel Game</button>
     </section>
 <script src="./scripts.js"></script>
 </body>

@@ -87,6 +87,7 @@
     }
 
     var board_state = {
+        board: null,
         points: {
             time: 0,
             misses: 0,
@@ -165,7 +166,7 @@
                         cell.classList.toggle("uncovered");
                         cell.classList.toggle("flipped");
 
-                        window.requestAnimationFrame(board.restart);
+                        window.requestAnimationFrame(board_state.board.restart);
                     }, 1200);
                 });
             }
@@ -274,8 +275,8 @@
     }
 
     function Board(board_name) {
+        var self = this;
         var board = window.document.querySelector(board_name);
-        board.className = "board";
 
         var level = 1;
         var pair = 4;
@@ -334,7 +335,7 @@
             }
         };
 
-        this.start = function () {
+        self.start = function () {
             var shuffled_board_cells = chunk(shuffle(board_cells), 2);
             var counter = 0;
 
@@ -351,9 +352,13 @@
             }
         };
 
-        this.restart = function () {
+        self.cancel = function () {
             clear();
-            this.start();
+        };
+
+        self.restart = function () {
+            clear();
+            self.start();
         }
     }
 
@@ -366,14 +371,22 @@
         }, 150);
 
         var playGameButton = window.document.getElementById("PlayGameButton");
+        var cancelGameButton = window.document.getElementById("CancelGameButton");
+
+        board_state.board = new Board("#GameApp .board");
 
         playGameButton.addEventListener("click", function () {
-            mainContent.classList.toggle("active");
-            gameContent.classList.toggle("active");
+            mainContent.classList.remove("active");
+            gameContent.classList.add("active");
 
-            var board = new Board("#GameApp");
+            window.requestAnimationFrame(board_state.board.start);
+        }, false);
 
-            window.requestAnimationFrame(board.start);
+        cancelGameButton.addEventListener("click", function () {
+            mainContent.classList.add("active");
+            gameContent.classList.remove("active");
+
+            window.requestAnimationFrame(board_state.board.cancel);
         }, false);
 
     }, false);
