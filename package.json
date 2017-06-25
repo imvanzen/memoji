@@ -1,0 +1,11 @@
+{
+  "name": "memoji",
+  "version": "0.1.0",
+  "description": "Memory with emoji faces",
+  "main": "scripts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "@imvanzen",
+  "license": "ISC"
+}
