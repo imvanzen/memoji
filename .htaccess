@@ -1,0 +1,67 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Redirect from www to non www
+    RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+
+    # Directory block
+    # RewriteCond %{REQUEST_URI} !^/([projects]\/[a-z0-9]\/index\.html|)$
+    # RewriteCond %{REQUEST_FILENAME} -d
+    # RewriteRule .* - [R=404,L]
+
+    # Static resources
+    # RewriteCond %{REQUEST_FILENAME} -f
+    # RewriteCond %{REQUEST_URI} \.(bmp|css|doc|docx|eot|js|ico|gif|jpg|jpeg|mp3|pdf|png|rar|svg|swf|ttf|txt|xls|xlsx|xml|woff|zip|map)$ [NC]
+    # RewriteRule .* - [L]
+
+    # Aplication
+    # RewriteRule .* index.php
+</IfModule>
+
+# Do not display files list
+    Options +FollowSymLinks -Indexes
+
+# Other settings
+    php_flag display_errors On
+    php_flag log_errors On
+    php_flag magic_quotes_gpc Off
+    php_flag magic_quotes_runtime Off
+    php_flag magic_quotes_sybase Off
+    php_flag register_globals Off
+    php_flag session.auto_start Off
+    php_flag session.use_trans_sid Off
+    php_flag short_open_tag Off
+    php_flag zlib.output_compression Off
+
+    php_value error_reporting 8191
+    php_value max_execution_time 30
+    php_value max_input_time 30
+    php_value memory_limit 32M
+    php_value post_max_size 32M
+    php_value upload_max_filesize 8M
+
+# XDEBUG
+    php_flag xdebug.profiler_enable Off
+
+# PHP5
+    AddHandler application/x-httpd-php5 .php
+
+# HEADERS
+    Header set X-UA-Compatible "IE=edge"
+
+# Browser cache 480 weeks
+<FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|js|css|swf)$">
+    Header set Cache-Control "max-age=290304000, public"
+</FilesMatch>
+ 
+# Browser cache 2 hours
+<FilesMatch "\.(xml|txt)$">
+    Header set Cache-Control "max-age=172800, public, must-revalidate"
+</FilesMatch>
+ 
+# Browser cache 2 hours
+<FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "max-age=7200, must-revalidate"
+</FilesMatch>
