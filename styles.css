@@ -59,7 +59,9 @@ body {
     flex: 0 50%;
 }
 
-.main-content_welcome * {
+.main-content_welcome *,
+.main-content_welcome *::before,
+.main-content_welcome *::after {
     -webkit-transform-origin: center center;
     -moz-transform-origin: center center;
     -ms-transform-origin: center center;
@@ -151,6 +153,23 @@ body {
     margin-top: -10px;
     margin-left: -10px;
     font-size: 7em;
+}
+
+.main-content_welcome a {
+    display: inline-block;
+    font-size: 4em;
+    padding: 10px;
+    text-decoration: none;
+    color: #bebf8e;
+}
+
+.main-content_welcome a:hover,
+.main-content_welcome a:hover {
+    -webkit-transform: scale(1.3);
+    -moz-transform: scale(1.3);
+    -ms-transform: scale(1.3);
+    -o-transform: scale(1.3);
+    transform: scale(1.3);
 }
 
 .board {
