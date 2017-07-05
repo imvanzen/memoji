@@ -95,9 +95,9 @@
             games: 0
         },
         refreshStats: function() {
-            window.document.querySelector(".games__score").innerText = "" + board_state.points.games;
-            window.document.querySelector(".passes__score").innerText = "" + board_state.points.passes;
-            window.document.querySelector(".misses__score").innerText = "" + board_state.points.misses;
+            window.document.querySelector(".games__score").innerText = board_state.points.games;
+            window.document.querySelector(".passes__score").innerText = board_state.points.passes;
+            window.document.querySelector(".misses__score").innerText = board_state.points.misses;
         },
         incMisses: function() {
             board_state.points.misses += 1;
@@ -155,21 +155,7 @@
         },
         checkUncovered: function () {
             var uncovered_cell = window.document.querySelectorAll(".board__cell.uncovered");
-
-            if (uncovered_cell.length === board_state.all_cards) {
-                Array.prototype.map.call(uncovered_cell, function (cell) {
-                    cell.classList.toggle("uncovered");
-                    setTimeout(function () {
-                        cell.classList.toggle("uncovered");
-                    }, 200);
-                    setTimeout(function () {
-                        cell.classList.toggle("uncovered");
-                        cell.classList.toggle("flipped");
-
-                        window.requestAnimationFrame(board_state.board.restart);
-                    }, 1200);
-                });
-            }
+            return uncovered_cell.length === board_state.all_cards;
         }
     };
 
@@ -233,7 +219,20 @@
                 if (board_state.compareCards()) {
                     board_state.incPasses();
                     board_state.approveState();
-                    board_state.checkUncovered();
+                    if (board_state.checkUncovered()) {
+                        var uncovered_cell = window.document.querySelectorAll(".board__cell.uncovered");
+                        Array.prototype.map.call(uncovered_cell, function (cell) {
+                            cell.classList.toggle("uncovered");
+                            setTimeout(function () {
+                                cell.classList.toggle("uncovered");
+                            }, 200);
+                            setTimeout(function () {
+                                cell.classList.toggle("uncovered");
+                                cell.classList.toggle("flipped");
+                            }, 1200);
+                        });
+                        board_state.board.restart();
+                    }
                 } else {
                     board_state.incMisses();
                     board_state.clearState();
@@ -312,23 +311,6 @@
             board_emoji_wrapper.appendChild(board_cells[i].getCell());
         }
 
-        var used_emoji = [];
-
-        var getRandomEmoji = function () {
-            var emoji = null;
-            var emoji_added = false;
-
-            while (!emoji_added) {
-                emoji = EMOJIS_LIST[Math.floor(Math.random() * EMOJIS_LIST.length)];
-                if (used_emoji.indexOf(emoji) === -1) {
-                    used_emoji.push(emoji);
-                    emoji_added = true;
-                }
-            }
-
-            return emoji;
-        };
-
         var clear = function () {
             for (var cell in board_cells) {
                 cell.clearCellContent();
@@ -336,10 +318,25 @@
         };
 
         self.start = function () {
+            var used_emoji = [];
+
+            var getRandomEmoji = function () {
+                var emoji = null;
+                var emoji_added = false;
+
+                while (!emoji_added) {
+                    emoji = EMOJIS_LIST[Math.floor(Math.random() * EMOJIS_LIST.length)];
+                    if (used_emoji.indexOf(emoji) === -1) {
+                        used_emoji.push(emoji);
+                        emoji_added = true;
+                    }
+                }
+
+                return emoji;
+            };
+
             var shuffled_board_cells = chunk(shuffle(board_cells), 2);
             var counter = 0;
-
-            board_state.incGames();
 
             while (counter < shuffled_board_cells.length) {
                 var emoji = new Emoji(getRandomEmoji());
@@ -350,6 +347,8 @@
 
                 counter += 1;
             }
+
+            board_state.incGames();
         };
 
         self.cancel = function () {
@@ -357,7 +356,7 @@
         };
 
         self.restart = function () {
-            clear();
+            window.requestAnimationFrame(clear);
             self.start();
         }
     }

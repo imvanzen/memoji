@@ -36,9 +36,12 @@ body {
 .main-content,
 .game-content {
     position: absolute;
+    width: 100%;
+    height: 100vh;
     top: 0;
     left: 0;
     opacity: 0;
+    pointer-events: none;
 
     -webkit-transition: all 0.5s;
     -moz-transition: all 0.5s;
@@ -51,8 +54,7 @@ body {
 .main-content.active,
 .game-content.active {
     opacity: 1;
-    width: 100%;
-    height: 100vh;
+    pointer-events: auto;
 }
 
 .main-content_welcome {
@@ -171,12 +173,13 @@ body {
     line-height: 2em;
     padding: 10px;
     text-decoration: none;
-    color: rgba(0,0,0,0.4);
+    opacity: .5;
+    color: #000;
     background-color: #f1f2b5;
 }
 
 .main-content_welcome a:hover {
-    color: rgba(0,0,0,0.8);
+    opacity: 1;
 }
 
 /**
