@@ -98,6 +98,8 @@ const unlockSounds = (): void => {
   });
   // Warm a silent seek so the first real cue isn't delayed.
   ensurePlayer('tap');
+  // Lazy import avoids a circular init with music.ts
+  void import('./music').then(({ unlockMusic }) => unlockMusic());
 };
 
 const sounds = {

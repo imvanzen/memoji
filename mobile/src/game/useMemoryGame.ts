@@ -2,6 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { sounds } from '../audio';
 import {
+  hapticBoardWin,
+  hapticFirstTry,
+  hapticFlip,
+  hapticMatch,
+  hapticMismatch,
+} from '../haptics';
+import {
   allMatched,
   bumpGame,
   bumpMiss,
@@ -51,8 +58,13 @@ export type UseMemoryGameResult = {
   stats: GameStats;
   /** Cards matched on a first-try (virgin card) pair this round. */
   firstTryCards: number;
-  /** Elapsed ms since first flip (0 until then; live while playing). */
-  elapsedMs: number;
+  /**
+   * Epoch ms when the live clock started (first flip).
+   * ScoreBar ticks locally from this — avoids re-rendering the board ~30×/s.
+   */
+  timerStartedAt: number | null;
+  /** Frozen time once the board is cleared (keeps ScoreBar stable during confetti). */
+  finalTimeMs: number | null;
   /** Frozen result after clearing the board; null while playing. */
   result: RoundResult | null;
   busy: boolean;
@@ -88,7 +100,8 @@ export function useMemoryGame(): UseMemoryGameResult {
   const [cards, setCards] = useState<CardState[]>([]);
   const [stats, setStats] = useState<GameStats>(initialStats);
   const [firstTryCards, setFirstTryCards] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null);
+  const [finalTimeMs, setFinalTimeMs] = useState<number | null>(null);
   const [result, setResult] = useState<RoundResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
@@ -97,8 +110,6 @@ export function useMemoryGame(): UseMemoryGameResult {
   );
   const [dealKey, setDealKey] = useState(0);
   const [difficulty, setDifficultyState] = useState<Difficulty>('easy');
-  /** Bumps when the timer should start ticking (first flip). */
-  const [timerEpoch, setTimerEpoch] = useState(0);
 
   const cardsRef = useRef(cards);
   const busyRef = useRef(busy);
@@ -155,25 +166,6 @@ export function useMemoryGame(): UseMemoryGameResult {
 
   useEffect(() => () => clearAllTimeouts(), [clearAllTimeouts]);
 
-  // Live timer — starts only after the first card flip (timerEpoch > 0).
-  useEffect(() => {
-    if (
-      screen !== 'playing' ||
-      result !== null ||
-      roundStartedAtRef.current === null
-    ) {
-      return;
-    }
-    const tick = () => {
-      if (roundStartedAtRef.current !== null) {
-        setElapsedMs(Date.now() - roundStartedAtRef.current);
-      }
-    };
-    tick();
-    const id = setInterval(tick, 250);
-    return () => clearInterval(id);
-  }, [screen, result, timerEpoch]);
-
   const fireCelebration = useCallback((kind: CelebrationKind) => {
     celebrationSeq.current += 1;
     setCelebration({ id: celebrationSeq.current, kind });
@@ -194,7 +186,8 @@ export function useMemoryGame(): UseMemoryGameResult {
     pendingResultRef.current = null;
     touchedRef.current = new Set();
     selectionHasVirginRef.current = false;
-    setElapsedMs(0);
+    setTimerStartedAt(null);
+    setFinalTimeMs(null);
     setFirstTryCards(0);
     firstTryCardsRef.current = 0;
     setResult(null);
@@ -251,6 +244,8 @@ export function useMemoryGame(): UseMemoryGameResult {
     setFlipDelayById({});
     setDealKey(0);
     roundStartedAtRef.current = null;
+    setTimerStartedAt(null);
+    setFinalTimeMs(null);
     setScreen('menu');
   }, [clearAllTimeouts]);
 
@@ -302,9 +297,9 @@ export function useMemoryGame(): UseMemoryGameResult {
     if (roundStartedAtRef.current !== null) {
       return;
     }
-    roundStartedAtRef.current = Date.now();
-    setElapsedMs(0);
-    setTimerEpoch((n) => n + 1);
+    const started = Date.now();
+    roundStartedAtRef.current = started;
+    setTimerStartedAt(started);
   }, []);
 
   const onCardPress = useCallback(
@@ -339,6 +334,7 @@ export function useMemoryGame(): UseMemoryGameResult {
       if (selectedIds.length === 1) {
         selectionHasVirginRef.current = isVirgin;
         sounds.flip();
+        hapticFlip();
         setCards(next);
         scheduleUnflip(selectedIds, SINGLE_FLIP_MS);
         return;
@@ -346,12 +342,14 @@ export function useMemoryGame(): UseMemoryGameResult {
 
       if (selectedIds.length !== 2) {
         sounds.flip();
+        hapticFlip();
         setCards(next);
         return;
       }
 
       clearFlipTimeout();
       sounds.flip();
+      hapticFlip();
 
       if (match) {
         const isFirstTry = selectionHasVirginRef.current || isVirgin;
@@ -373,17 +371,20 @@ export function useMemoryGame(): UseMemoryGameResult {
           const timeMs =
             roundStartedAtRef.current !== null
               ? Date.now() - roundStartedAtRef.current
-              : elapsedMs;
-          setElapsedMs(timeMs);
+              : 0;
           roundStartedAtRef.current = null;
+          setTimerStartedAt(null);
+          setFinalTimeMs(timeMs);
           pendingResultRef.current = {
             timeMs,
             firstTryCards: nextFirstTry,
           };
           sounds.boardWin();
+          hapticBoardWin();
           fireCelebration('board');
         } else if (isFirstTry) {
           sounds.firstTry();
+          hapticFirstTry();
           fireCelebration('firstTry');
           setBusy(true);
           clearCelebrateTimeout();
@@ -393,6 +394,7 @@ export function useMemoryGame(): UseMemoryGameResult {
           }, FIRST_TRY_CELEBRATION_MS);
         } else {
           sounds.match();
+          hapticMatch();
           fireCelebration('pair');
           setBusy(true);
           clearCelebrateTimeout();
@@ -406,6 +408,7 @@ export function useMemoryGame(): UseMemoryGameResult {
 
       selectionHasVirginRef.current = false;
       sounds.mismatch();
+      hapticMismatch();
       setCards(next);
       setBusy(true);
       setStats((s) => bumpMiss(s));
@@ -414,7 +417,6 @@ export function useMemoryGame(): UseMemoryGameResult {
     [
       clearCelebrateTimeout,
       clearFlipTimeout,
-      elapsedMs,
       ensureTimerStarted,
       fireCelebration,
       result,
@@ -428,7 +430,8 @@ export function useMemoryGame(): UseMemoryGameResult {
     cards,
     stats,
     firstTryCards,
-    elapsedMs,
+    timerStartedAt,
+    finalTimeMs,
     result,
     busy,
     celebration,

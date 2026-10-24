@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { MemoryCard } from './MemoryCard';
 
@@ -24,7 +25,7 @@ const COLS = 4;
 const ROWS = 4;
 const GUTTER_RATIO = 10 / 128;
 
-export function GameBoard({
+function GameBoardInner({
   cards,
   onCardPress,
   disabled = false,
@@ -70,6 +71,7 @@ export function GameBoard({
             }}
           >
             <MemoryCard
+              id={card.id}
               emoji={card.emoji}
               flipped={card.flipped}
               matched={card.matched}
@@ -79,7 +81,7 @@ export function GameBoard({
               boardIndex={index}
               partyKey={partyKey}
               dealKey={dealKey}
-              onPress={() => onCardPress(card.id)}
+              onPress={onCardPress}
             />
           </View>
         );
@@ -87,6 +89,8 @@ export function GameBoard({
     </View>
   );
 }
+
+export const GameBoard = memo(GameBoardInner);
 
 const styles = StyleSheet.create({
   board: {

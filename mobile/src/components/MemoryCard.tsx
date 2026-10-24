@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
   Easing,
@@ -15,10 +15,11 @@ import { ShineOverlay } from './ShineOverlay';
 import { colors } from '../theme';
 
 type Props = {
+  id: string;
   emoji: string;
   flipped: boolean;
   matched: boolean;
-  onPress: () => void;
+  onPress: (id: string) => void;
   disabled?: boolean;
   size?: number;
   /** Stagger delay (ms) when flipping — used for wave close/open */
@@ -36,7 +37,8 @@ type Props = {
  * - reverse: yellow disc + "?"
  * - avers: white disc + system emoji glyph
  */
-export function MemoryCard({
+function MemoryCardInner({
+  id,
   emoji,
   flipped,
   matched,
@@ -54,6 +56,29 @@ export function MemoryCard({
   const bump = useSharedValue(0);
   const party = useSharedValue(0);
   const deal = useSharedValue(dealKey > 0 ? 0 : 1);
+  const idle = useSharedValue(0);
+
+  // Gentle perpetual float — phase offset per cell so the board feels alive.
+  useEffect(() => {
+    const period = 2400 + (boardIndex % 5) * 220;
+    idle.value = withDelay(
+      boardIndex * 70,
+      withRepeat(
+        withSequence(
+          withTiming(1, {
+            duration: period,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          withTiming(-1, {
+            duration: period,
+            easing: Easing.inOut(Easing.sin),
+          }),
+        ),
+        -1,
+        false,
+      ),
+    );
+  }, [boardIndex, idle]);
 
   useEffect(() => {
     const target = open ? 180 : 0;
@@ -148,11 +173,17 @@ export function MemoryCard({
     const dealScale = interpolate(deal.value, [0, 1], [0.35, 1]);
     const dealY = interpolate(deal.value, [0, 1], [28, 0]);
     const dealOpacity = interpolate(deal.value, [0, 0.35, 1], [0, 1, 1]);
+    // Quiet idle sway — dialed down while party dance is active
+    const idleAmt = interpolate(Math.abs(party.value), [0, 0.4, 1], [1, 0.35, 0]);
+    const idleY = interpolate(idle.value, [-1, 1], [-3.2, 3.2]) * idleAmt;
+    const idleX = interpolate(idle.value, [-1, 1], [-1.6, 1.6]) * idleAmt;
+    const idleRot = interpolate(idle.value, [-1, 1], [-2.4, 2.4]) * idleAmt;
     return {
       opacity: dealOpacity,
       transform: [
-        { translateY: partyY + dealY },
-        { rotateZ: `${bumpRot + partyRot}deg` },
+        { translateX: idleX },
+        { translateY: partyY + dealY + idleY },
+        { rotateZ: `${bumpRot + partyRot + idleRot}deg` },
         { scale: dealScale },
       ],
     };
@@ -184,6 +215,10 @@ export function MemoryCard({
   const markSize = Math.max(30, Math.round(size * 0.48));
   const radius = size / 2;
 
+  const handlePress = useCallback(() => {
+    onPress(id);
+  }, [id, onPress]);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -194,7 +229,7 @@ export function MemoryCard({
       onPressOut={() => {
         pressed.value = 0;
       }}
-      onPress={onPress}
+      onPress={handlePress}
       style={{ width: size, height: size }}
     >
       <Animated.View
@@ -237,6 +272,8 @@ export function MemoryCard({
     </Pressable>
   );
 }
+
+export const MemoryCard = memo(MemoryCardInner);
 
 const styles = StyleSheet.create({
   card: {

@@ -9,3 +9,4 @@ export { ScoreBar } from './ScoreBar';
 export { ConfettiBurst } from './ConfettiBurst';
 export type { ConfettiKind } from './ConfettiBurst';
 export { ResultsOverlay } from './ResultsOverlay';
+export { MusicToggle } from './MusicToggle';

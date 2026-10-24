@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { unlockSounds } from '../audio';
@@ -5,6 +6,7 @@ import { CartoonBackground } from '../components/CartoonBackground';
 import { ConfettiBurst } from '../components/ConfettiBurst';
 import { GameBoard, type BoardCard } from '../components/GameBoard';
 import { MemojiButton } from '../components/MemojiButton';
+import { MusicToggle } from '../components/MusicToggle';
 import { ResultsOverlay } from '../components/ResultsOverlay';
 import { ScoreBar } from '../components/ScoreBar';
 import type { Celebration, RoundResult } from '../game/useMemoryGame';
@@ -12,7 +14,8 @@ import { spacing } from '../theme';
 
 type Props = {
   cards: BoardCard[];
-  elapsedMs: number;
+  timerStartedAt: number | null;
+  finalTimeMs?: number | null;
   firstTryCards: number;
   games: number;
   onCardPress: (id: string) => void;
@@ -28,15 +31,19 @@ type Props = {
 };
 
 function formatTime(ms: number): string {
-  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const clamped = Math.max(0, ms);
+  const totalCs = Math.floor(clamped / 10);
+  const cs = totalCs % 100;
+  const totalSec = Math.floor(totalCs / 100);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
 }
 
-export function GameScreen({
+function GameScreenInner({
   cards,
-  elapsedMs,
+  timerStartedAt,
+  finalTimeMs = null,
   firstTryCards,
   games,
   onCardPress,
@@ -51,7 +58,6 @@ export function GameScreen({
   dealKey = 0,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const timeLabel = formatTime(elapsedMs);
 
   return (
     <View style={styles.root}>
@@ -65,8 +71,14 @@ export function GameScreen({
           },
         ]}
       >
+        <View style={styles.topRow}>
+          <View style={styles.topSpacer} />
+          <MusicToggle />
+        </View>
+
         <ScoreBar
-          timeLabel={timeLabel}
+          timerStartedAt={timerStartedAt}
+          frozenMs={result?.timeMs ?? finalTimeMs}
           firstTryCards={firstTryCards}
           games={games}
         />
@@ -104,7 +116,7 @@ export function GameScreen({
 
       <ResultsOverlay
         visible={result !== null}
-        timeLabel={result ? formatTime(result.timeMs) : '0:00'}
+        timeLabel={result ? formatTime(result.timeMs) : '0:00.00'}
         firstTryCards={result?.firstTryCards ?? 0}
         onPlayAgain={onPlayAgain}
         fontsLoaded={fontsLoaded}
@@ -113,6 +125,8 @@ export function GameScreen({
   );
 }
 
+export const GameScreen = memo(GameScreenInner);
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -120,6 +134,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
+  },
+  topRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  topSpacer: {
+    flex: 1,
   },
   boardWrap: {
     flex: 1,

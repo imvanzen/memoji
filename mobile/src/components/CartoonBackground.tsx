@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -184,7 +184,7 @@ function FloatingBlob({ spec }: { spec: BlobSpec }) {
   );
 }
 
-export function CartoonBackground() {
+function CartoonBackgroundInner() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <LinearGradient
@@ -200,6 +200,8 @@ export function CartoonBackground() {
     </View>
   );
 }
+
+export const CartoonBackground = memo(CartoonBackgroundInner);
 
 const styles = StyleSheet.create({
   blob: {

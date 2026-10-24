@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import {
   Fredoka_500Medium,
   Fredoka_600SemiBold,
 } from '@expo-google-fonts/fredoka';
+import { setMusicTrack } from './audio';
 import { MenuScreen } from './screens/MenuScreen';
 import { GameScreen } from './screens/GameScreen';
 import { useMemoryGame } from './game';
@@ -20,6 +22,11 @@ export function AppRoot() {
   });
 
   const game = useMemoryGame();
+
+  // Lobby vs in-round beds — starts after first unlockSounds() gesture.
+  useEffect(() => {
+    setMusicTrack(game.screen === 'menu' ? 'menu' : 'game');
+  }, [game.screen]);
 
   if (!fontsLoaded) {
     return (
@@ -42,7 +49,8 @@ export function AppRoot() {
       ) : (
         <GameScreen
           cards={game.cards}
-          elapsedMs={game.elapsedMs}
+          timerStartedAt={game.timerStartedAt}
+          finalTimeMs={game.finalTimeMs}
           firstTryCards={game.firstTryCards}
           games={game.stats.games}
           onCardPress={game.onCardPress}
